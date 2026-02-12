@@ -1,4 +1,5 @@
 import { AudioLoader, SRGBColorSpace, TextureLoader, VideoTexture } from "three";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type {
@@ -66,11 +67,20 @@ export class AssetStore<TManifest extends AssetManifest> {
   private readonly _cache = new Map<string, unknown>();
   private readonly _inflight = new Map<string, Promise<unknown>>();
   private readonly _textureLoader = new TextureLoader();
-  private readonly _gltfLoader = new GLTFLoader();
+  private readonly _gltfLoader: GLTFLoader;
+  private readonly _dracoLoader: DRACOLoader;
   private readonly _audioLoader = new AudioLoader();
 
-  constructor(manifest: TManifest) {
+  constructor(manifest: TManifest, dracoPath = "/draco/") {
     this._entries = flattenManifest(manifest);
+
+    // Configure Draco loader for compressed GLTF models
+    this._dracoLoader = new DRACOLoader();
+    this._dracoLoader.setDecoderPath(dracoPath);
+    this._dracoLoader.setDecoderConfig({ type: "js" });
+
+    this._gltfLoader = new GLTFLoader();
+    this._gltfLoader.setDRACOLoader(this._dracoLoader);
   }
 
   has(key: AssetPath<TManifest>): boolean {
@@ -157,6 +167,7 @@ export class AssetStore<TManifest extends AssetManifest> {
     for (const key of Array.from(this._cache.keys())) {
       this.dispose(key as AssetPath<TManifest>);
     }
+    this._dracoLoader.dispose();
   }
 
   private async _loadEntry(entry: AssetEntry): Promise<unknown> {
