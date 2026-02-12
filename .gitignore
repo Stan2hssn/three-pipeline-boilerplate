@@ -12,8 +12,8 @@ dist
 dist-ssr
 *.local
 
-# Assets sources (optionnel - décommenter si vous voulez ignorer les sources)
-# assets-source/
+# Assets sources (uncompressed - not committed)
+assets-source/
 
 # Editor directories and files
 .vscode/*
