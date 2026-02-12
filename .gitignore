@@ -13,7 +13,7 @@ dist-ssr
 *.local
 
 # Assets sources (uncompressed - not committed)
-assets-source/
+assets-source/*
 
 # Editor directories and files
 .vscode/*

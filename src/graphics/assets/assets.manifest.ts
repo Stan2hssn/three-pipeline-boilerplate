@@ -16,7 +16,7 @@ export const ASSET_MANIFEST = defineAssets({
   },
   postfx: {
     grainTexture: {
-      src: "/assets/images/PostFX/grainTexture.webp",
+      src: "/assets/Images/PostFX/grainTexture.webp",
       type: "texture",
       group: "boot",
       postProcess: (resource) => {
