@@ -286,4 +286,4 @@ transitions animées
 
 hot-swap
 
-multi-backend (WebGPU, Canvas, etc.)# three-pipeline-boilerplate
+multi-backend (WebGPU, Canvas, etc.)
