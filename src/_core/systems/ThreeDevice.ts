@@ -1,0 +1,140 @@
+import { WebGLRenderer, type Texture, type WebGLRendererParameters } from "three";
+import {
+  ASSET_KEYS,
+  ASSET_MANIFEST,
+  type AppAssetManifest,
+} from "../../graphics/assets/assets.manifest.ts";
+import type { UniverseId } from "../../graphics/universes/Universe.id.ts";
+import { UNIVERSE_MANIFEST } from "../../graphics/universes/universes.manifest.ts";
+import type { AssetStore } from "../assets/AssetStore.ts";
+import { createAssetStore } from "../assets/index.ts";
+import { UniverseRegistry } from "../registries/UniverseRegistry/UniverseRegistry.ts";
+import Runtime from "./Runtime.ts";
+import State from "./State.ts";
+
+export interface IThreeDeviceSlice {
+  renderer: WebGLRenderer;
+  assets: AssetStore<AppAssetManifest>;
+}
+
+/**
+ * ThreeDevice - Creates canvas + WebGLRenderer, Runtime from _core,
+ * registers manifest, activates initial universes.
+ */
+export default class ThreeDevice implements IThreeDeviceSlice {
+  private readonly _canvas: HTMLCanvasElement;
+  readonly renderer: WebGLRenderer;
+  readonly assets: AssetStore<AppAssetManifest>;
+  private readonly _state: State;
+  private readonly _registry: UniverseRegistry<UniverseId>;
+  private readonly _runtime: Runtime<UniverseId>;
+  private readonly _onViewportChange = (): void => {
+    this.resize(this._canvas.clientWidth, this._canvas.clientHeight);
+  };
+  private _eventsBound = false;
+  private _disposed = false;
+
+  constructor(canvas: HTMLCanvasElement, config?: WebGLRendererParameters) {
+    this._canvas = canvas;
+    this.renderer = new WebGLRenderer({
+      canvas,
+      ...config,
+    });
+    this.renderer.setPixelRatio(
+      Math.min(globalThis.window?.devicePixelRatio ?? 1, 2)
+    );
+    this.assets = createAssetStore(ASSET_MANIFEST);
+
+    this._state = new State();
+    this._registry = new UniverseRegistry<UniverseId>();
+
+    for (const { id, ctor, isDefault } of UNIVERSE_MANIFEST) {
+      this._registry.define(id, () => new ctor(this), isDefault);
+    }
+
+    this._runtime = new Runtime<UniverseId>(
+      this.renderer,
+      this._registry,
+      this._state
+    );
+  }
+
+  get canvas(): HTMLCanvasElement {
+    return this._canvas;
+  }
+
+  get runtime(): Runtime<UniverseId> {
+    return this._runtime;
+  }
+
+  get state(): State {
+    return this._state;
+  }
+
+  static async create(
+    canvas: HTMLCanvasElement,
+    config?: WebGLRendererParameters
+  ): Promise<ThreeDevice> {
+    const device = new ThreeDevice(canvas, config);
+    await device.init();
+    return device;
+  }
+
+  async init(): Promise<void> {
+    this._state.setViewport(this._canvas.clientWidth, this._canvas.clientHeight);
+    this.renderer.setSize(this._canvas.clientWidth, this._canvas.clientHeight, false);
+    await this.assets.preloadGroup("boot");
+
+    const grainTexture = this.assets.get<Texture>(ASSET_KEYS.postfx.grainTexture);
+    this._runtime.output.setPostFxGrainTexture(grainTexture ?? null);
+
+    this._runtime.init();
+
+    const defaultId = this._registry.getDefaultId();
+    if (defaultId) await this._runtime.activateUniverse(defaultId);
+
+    this._handleEvents();
+
+    this.start();
+  }
+
+  private _handleEvents(): void {
+    if (this._eventsBound) return;
+    globalThis.addEventListener("resize", this._onViewportChange, true);
+    globalThis.addEventListener("orientationchange", this._onViewportChange, true);
+    this._eventsBound = true;
+  }
+
+  start(): void {
+    this._runtime.start();
+  }
+
+  stop(): void {
+    this._runtime.stop();
+  }
+
+  resize(width: number, height: number): void {
+    this._state.setViewport(width, height);
+    this.renderer.setSize(width, height, false);
+    this._runtime.resize(width, height);
+  }
+
+  dispose(): void {
+    if (this._disposed) return;
+    this._disposed = true;
+
+    if (this._eventsBound) {
+      globalThis.removeEventListener("resize", this._onViewportChange, true);
+      globalThis.removeEventListener(
+        "orientationchange",
+        this._onViewportChange,
+        true
+      );
+      this._eventsBound = false;
+    }
+
+    this._runtime.dispose();
+    this.assets.disposeAll();
+    this.renderer.dispose();
+  }
+}
