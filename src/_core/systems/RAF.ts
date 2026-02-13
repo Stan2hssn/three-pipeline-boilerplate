@@ -1,5 +1,6 @@
 import type InputBase from "./Input.ts";
 import type Output from "./Output.ts";
+import type { StatsManager } from "../stats/index.ts";
 
 /**
  * RAF - Main loop.
@@ -15,6 +16,7 @@ export default class RAF {
     private _lastTime = 0;
     private _startTime = 0;
     private _initialized = false;
+    private _stats: StatsManager | null = null;
 
     constructor(input: InputBase, output: Output) {
         this._input = input;
@@ -39,6 +41,10 @@ export default class RAF {
 
     get time(): number {
         return this._time;
+    }
+
+    setStats(stats: StatsManager | null): void {
+        this._stats = stats;
     }
 
     init(): void {
@@ -82,8 +88,11 @@ export default class RAF {
         this._time = currentTime - this._startTime;
 
         this._input.update(this._time, dt);
+        this._stats?.begin();
         this._output.update(this._time, dt);
         this._output.render({ time: this._time, deltaTime: dt });
+        this._stats?.end();
+        this._stats?.update();
 
         this._rafId = requestAnimationFrame(this._tick);
     };
