@@ -4,10 +4,12 @@ import {
   ASSET_MANIFEST,
   type AppAssetManifest,
 } from "../../graphics/assets/assets.manifest.ts";
+import { DEBUG_CONFIG } from "../../graphics/debug/debug.config.ts";
 import type { UniverseId } from "../../graphics/universes/Universe.id.ts";
 import { UNIVERSE_MANIFEST } from "../../graphics/universes/universes.manifest.ts";
 import type { AssetStore } from "../assets/AssetStore.ts";
 import { createAssetStore } from "../assets/index.ts";
+import { debug, type DebugManager } from "../debug/index.ts";
 import { UniverseRegistry } from "../registries/UniverseRegistry/UniverseRegistry.ts";
 import Runtime from "./Runtime.ts";
 import State from "./State.ts";
@@ -15,6 +17,7 @@ import State from "./State.ts";
 export interface IThreeDeviceSlice {
   renderer: WebGLRenderer;
   assets: AssetStore<AppAssetManifest>;
+  debug: DebugManager;
 }
 
 /**
@@ -25,6 +28,7 @@ export default class ThreeDevice implements IThreeDeviceSlice {
   private readonly _canvas: HTMLCanvasElement;
   readonly renderer: WebGLRenderer;
   readonly assets: AssetStore<AppAssetManifest>;
+  readonly debug: DebugManager;
   private readonly _state: State;
   private readonly _registry: UniverseRegistry<UniverseId>;
   private readonly _runtime: Runtime<UniverseId>;
@@ -44,6 +48,7 @@ export default class ThreeDevice implements IThreeDeviceSlice {
       Math.min(globalThis.window?.devicePixelRatio ?? 1, 2)
     );
     this.assets = createAssetStore(ASSET_MANIFEST);
+    this.debug = debug;
 
     this._state = new State();
     this._registry = new UniverseRegistry<UniverseId>();
@@ -89,6 +94,7 @@ export default class ThreeDevice implements IThreeDeviceSlice {
     this._runtime.output.setPostFxGrainTexture(grainTexture ?? null);
 
     this._runtime.init();
+    this.debug.init(DEBUG_CONFIG);
 
     const defaultId = this._registry.getDefaultId();
     if (defaultId) await this._runtime.activateUniverse(defaultId);
@@ -134,6 +140,7 @@ export default class ThreeDevice implements IThreeDeviceSlice {
     }
 
     this._runtime.dispose();
+    this.debug.dispose();
     this.assets.disposeAll();
     this.renderer.dispose();
   }
