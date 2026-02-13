@@ -19,6 +19,7 @@ export { default as Output } from "./systems/Output.ts";
 export { default as RAF } from "./systems/RAF.ts";
 export { default as Runtime } from "./systems/Runtime.ts";
 export { default as State } from "./systems/State.ts";
+export { StatsManager } from "./stats/index.ts";
 export type { Viewport } from "./systems/State.ts";
 export type { FrameTiming } from "./types/Frame.type.ts";
 export { UniverseBase } from "./universes/Universe.base.ts";
