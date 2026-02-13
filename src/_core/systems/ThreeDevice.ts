@@ -1,4 +1,5 @@
 import { WebGLRenderer, type Texture, type WebGLRendererParameters } from "three";
+import { DOMInputAdapter } from "../../graphics/adapters/systems/DOMInputAdapter.ts";
 import {
   ASSET_KEYS,
   ASSET_MANIFEST,
@@ -13,6 +14,7 @@ import { createAssetStore } from "../assets/index.ts";
 import { debug, type DebugManager } from "../debug/index.ts";
 import { UniverseRegistry } from "../registries/UniverseRegistry/UniverseRegistry.ts";
 import { StatsManager } from "../stats/index.ts";
+import type Input from "./Input.ts";
 import Runtime from "./Runtime.ts";
 import State from "./State.ts";
 
@@ -20,6 +22,7 @@ export interface IThreeDeviceSlice {
   renderer: WebGLRenderer;
   assets: AssetStore<AppAssetManifest>;
   debug: DebugManager;
+  input: Input;
   stats: StatsManager;
 }
 
@@ -36,6 +39,7 @@ export default class ThreeDevice implements IThreeDeviceSlice {
   private readonly _state: State;
   private readonly _registry: UniverseRegistry<UniverseId>;
   private readonly _runtime: Runtime<UniverseId>;
+  private readonly _inputAdapter: DOMInputAdapter;
   private _debugUnsubscribeStats: (() => void) | null = null;
   private readonly _onViewportChange = (): void => {
     this.resize(this._canvas.clientWidth, this._canvas.clientHeight);
@@ -68,6 +72,7 @@ export default class ThreeDevice implements IThreeDeviceSlice {
       this._registry,
       this._state
     );
+    this._inputAdapter = new DOMInputAdapter();
     this._runtime.raf.setStats(this.stats);
   }
 
@@ -81,6 +86,10 @@ export default class ThreeDevice implements IThreeDeviceSlice {
 
   get state(): State {
     return this._state;
+  }
+
+  get input(): Input {
+    return this._runtime.input;
   }
 
   static async create(
@@ -102,6 +111,7 @@ export default class ThreeDevice implements IThreeDeviceSlice {
 
     this._runtime.init();
     this.debug.init(DEBUG_CONFIG);
+    this._inputAdapter.attach(this._canvas, this._runtime.input);
     this._bindDebugControls();
 
     const defaultId = this._registry.getDefaultId();
@@ -132,14 +142,14 @@ export default class ThreeDevice implements IThreeDeviceSlice {
         };
 
         const basicBinding = target.addBinding(params, "basic", { label: "Stats GL" });
-        basicBinding.on("change", async (event: { value: boolean }) => {
+        basicBinding.on("change", async (event: { value: boolean; }) => {
           await this.stats.setBasicEnabled(event.value);
           params.basic = this.stats.basicEnabled;
           basicBinding.refresh();
         });
 
         const perfBinding = target.addBinding(params, "perf", { label: "Three Perf" });
-        perfBinding.on("change", async (event: { value: boolean }) => {
+        perfBinding.on("change", async (event: { value: boolean; }) => {
           await this.stats.setPerfEnabled(event.value);
           params.perf = this.stats.perfEnabled;
           perfBinding.refresh();
@@ -219,6 +229,7 @@ export default class ThreeDevice implements IThreeDeviceSlice {
     }
 
     this._runtime.dispose();
+    this._inputAdapter.dispose();
     this._debugUnsubscribeStats?.();
     this._debugUnsubscribeStats = null;
     this.debug.dispose();

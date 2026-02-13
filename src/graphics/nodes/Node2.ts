@@ -64,8 +64,8 @@ export class Node2 implements IObject3DNode {
     onUnmounted(): void { }
 
     update(_time: number, _dt: number): void {
-        this.mesh.rotation.y += 0.01;
-        this.mesh.rotation.z -= 0.01;
+        // this.mesh.rotation.y += 0.01;
+        // this.mesh.rotation.z -= 0.01;
     }
 
     dispose(): void {
