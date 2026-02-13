@@ -69,8 +69,8 @@ export class Node1 implements IObject3DNode {
     }
 
     update(_time: number, _dt: number): void {
-        this.mesh.rotation.y += 0.01;
-        this.mesh.rotation.x += 0.01;
+        // this.mesh.rotation.y += 0.01;
+        // this.mesh.rotation.x += 0.01;
     }
 
     dispose(): void {

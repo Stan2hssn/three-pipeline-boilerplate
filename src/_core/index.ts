@@ -1,4 +1,5 @@
 export { NodeGraph } from "./nodes/NodeGraph.ts";
+export { NodeBase } from "./nodes/Node.base.ts";
 export type { default as INode } from "./nodes/Node.interface.ts";
 export { debug, DebugManager } from "./debug/index.ts";
 export type {

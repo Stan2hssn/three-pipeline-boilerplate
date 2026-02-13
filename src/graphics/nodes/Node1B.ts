@@ -65,8 +65,8 @@ export class Node1B implements IObject3DNode {
   onUnmounted(): void { }
 
   update(_time: number, _dt: number): void {
-    this.mesh.rotation.y -= 0.01;
-    this.mesh.rotation.z += 0.01;
+    // this.mesh.rotation.y -= 0.01;
+    // this.mesh.rotation.z += 0.01;
 
     const l = Math.sin(_time * 0.001) * 0.2 + 0.5;
     this.material.color.setHSL(0.7, 1, l);
