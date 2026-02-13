@@ -1,4 +1,5 @@
 import type { NodeId } from "@graphics/nodes/Node.id.ts";
+import type { DebugManager, DebugSubscriptionOptions } from "../debug/index.ts";
 import type { NodeGraph } from "../nodes/NodeGraph.ts";
 import type IPipeline from "../pipeline/Pipeline.interface.ts";
 import type { IUniverseContract } from "./UniverseContract.type.ts";
@@ -17,6 +18,8 @@ export abstract class UniverseBase<Id extends string> {
   protected readonly _graph: NodeGraph;
   protected readonly _pipeline: IPipeline;
   protected readonly _preloadGroup: PreloadGroupFn | null;
+  protected readonly _debug: DebugManager | null;
+  private readonly _debugUnsubscribers = new Set<() => void>();
 
   protected _contracts = new Map<NodeId, IUniverseContract>();
   public _currentContractId: NodeId | null = null;
@@ -31,7 +34,8 @@ export abstract class UniverseBase<Id extends string> {
     camera: unknown,
     graph: NodeGraph,
     pipeline: IPipeline,
-    preloadGroup: PreloadGroupFn | null = null
+    preloadGroup: PreloadGroupFn | null = null,
+    debug: DebugManager | null = null
   ) {
     this.id = id;
     this._scene = scene;
@@ -39,6 +43,7 @@ export abstract class UniverseBase<Id extends string> {
     this._graph = graph;
     this._pipeline = pipeline;
     this._preloadGroup = preloadGroup;
+    this._debug = debug;
   }
 
   get mounted(): boolean {
@@ -150,6 +155,7 @@ export abstract class UniverseBase<Id extends string> {
   onMounted(): void {
     this._pipeline.onMounted();
     (this._graph as any).onMounted?.();
+    this.onDebugMount();
   }
 
   beforeUnmount(): void | Promise<void> {
@@ -160,6 +166,8 @@ export abstract class UniverseBase<Id extends string> {
   }
 
   onUnmounted(): void {
+    this._clearDebugSubscriptions();
+    this.onDebugUnmount();
     this._pipeline.onUnmounted();
     (this._graph as any).onUnmounted?.();
   }
@@ -178,8 +186,35 @@ export abstract class UniverseBase<Id extends string> {
   }
 
   dispose(): void {
+    this._clearDebugSubscriptions();
     this._pipeline.dispose();
     (this._graph as any).dispose();
+  }
+
+  protected onDebugMount(): void {
+    //
+  }
+
+  protected onDebugUnmount(): void {
+    //
+  }
+
+  protected debugSubscribe(
+    options: Omit<DebugSubscriptionOptions, "ownerId">
+  ): () => void {
+    if (!this._debug) return () => {};
+
+    const unsubscribe = this._debug.subscribe({
+      ownerId: this.id,
+      ...options,
+    });
+
+    this._debugUnsubscribers.add(unsubscribe);
+
+    return () => {
+      unsubscribe();
+      this._debugUnsubscribers.delete(unsubscribe);
+    };
   }
 
   protected getAssetPreloadGroups(): string[] {
@@ -191,5 +226,12 @@ export abstract class UniverseBase<Id extends string> {
     const groups = this.getAssetPreloadGroups();
     if (groups.length === 0) return;
     await Promise.all(groups.map((group) => this._preloadGroup!(group)));
+  }
+
+  private _clearDebugSubscriptions(): void {
+    for (const unsubscribe of this._debugUnsubscribers) {
+      unsubscribe();
+    }
+    this._debugUnsubscribers.clear();
   }
 }

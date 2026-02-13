@@ -2,6 +2,7 @@ import type { IThreeDeviceSlice } from "@/_core/systems/ThreeDevice.ts";
 import { NodeGraph } from "@_core/nodes/NodeGraph.ts";
 import { PipelineBase } from "@_core/pipeline/Pipeline.base.ts";
 import { UniverseBase } from "@_core/universes/Universe.base.ts";
+import { FOLDER_ID, TAB_ID } from "@graphics/debug/Debug.id.ts";
 import type { NodeId } from "@graphics/nodes/Node.id.ts";
 import { NODE_ID } from "@graphics/nodes/Node.id.ts";
 import { Node1 } from "@graphics/nodes/Node1.ts";
@@ -39,7 +40,8 @@ export class MainUniverse extends UniverseBase<UniverseId> {
       camera,
       graph,
       pipeline,
-      device.assets.preloadGroup.bind(device.assets)
+      device.assets.preloadGroup.bind(device.assets),
+      device.debug
     );
 
     this._device = device;
@@ -68,6 +70,7 @@ export class MainUniverse extends UniverseBase<UniverseId> {
   }
 
   override onMounted(): void {
+    super.onMounted();
     log("onMounted");
 
     // Initial contract (base class applyContract)
@@ -89,6 +92,25 @@ export class MainUniverse extends UniverseBase<UniverseId> {
     }
     log("beforeUnmount");
     return super.beforeUnmount();
+  }
+
+  protected override onDebugMount(): void {
+    this.debugSubscribe({
+      tabId: TAB_ID.UNIVERSE,
+      folderId: FOLDER_ID.UNIVERSE_MAIN,
+      mount: (target) => {
+        const button = target.addButton({ title: "Swap Contract" });
+        const onClick = () => {
+          const next: NodeId =
+            this.currentContractId === NODE_ID.NODE_1 ? NODE_ID.NODE_2 : NODE_ID.NODE_1;
+          void this.applyContract(next);
+        };
+        button.on("click", onClick);
+        return () => {
+          button.dispose();
+        };
+      },
+    });
   }
 
   override resize(width: number, height: number): void {
