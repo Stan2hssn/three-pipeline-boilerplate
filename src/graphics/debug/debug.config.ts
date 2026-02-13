@@ -5,7 +5,7 @@ export const DEBUG_CONFIG: DebugConfig = {
   tabs: [
     { id: TAB_ID.UNIVERSE, label: "Universe", visible: true, order: 1 },
     { id: TAB_ID.NODES, label: "Nodes", visible: true, order: 2 },
-    { id: TAB_ID.RENDER, label: "Render", visible: false, order: 3 },
+    { id: TAB_ID.RENDER, label: "Render", visible: true, order: 3 },
   ],
   folders: [
     {
@@ -31,6 +31,14 @@ export const DEBUG_CONFIG: DebugConfig = {
       visible: true,
       expanded: true,
       order: 1,
+    },
+    {
+      id: FOLDER_ID.STATS,
+      tabId: TAB_ID.RENDER,
+      label: "Stats",
+      visible: true,
+      expanded: true,
+      order: 2,
     },
   ],
 };

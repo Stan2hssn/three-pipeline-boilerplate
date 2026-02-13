@@ -10,6 +10,7 @@ export const FOLDER_ID = {
   UNIVERSE_MAIN: "UNIVERSE_MAIN",
   NODES_SWAP: "NODES_SWAP",
   POSTFX: "POSTFX",
+  STATS: "STATS",
 } as const;
 
 export type FolderId = (typeof FOLDER_ID)[keyof typeof FOLDER_ID];
