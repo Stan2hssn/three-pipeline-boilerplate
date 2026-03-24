@@ -1,4 +1,10 @@
-import { WebGLRenderer, type Texture, type WebGLRendererParameters } from "three";
+import {
+  SRGBColorSpace,
+  WebGLRenderer,
+  type Texture,
+  type WebGLRendererParameters
+} from "three";
+import { OrbitCameraHelper } from "../../graphics/adapters/helpers/OrbitCamera.helper.ts";
 import { DOMInputAdapter } from "../../graphics/adapters/systems/DOMInputAdapter.ts";
 import {
   ASSET_KEYS,
@@ -7,23 +13,33 @@ import {
 } from "../../graphics/assets/assets.manifest.ts";
 import { DEBUG_CONFIG } from "../../graphics/debug/debug.config.ts";
 import { FOLDER_ID, TAB_ID } from "../../graphics/debug/Debug.id.ts";
+import { PostProcessingPass } from "../../graphics/postprocessing/passes/PostProcessingPass.ts";
 import type { UniverseId } from "../../graphics/universes/Universe.id.ts";
 import { UNIVERSE_MANIFEST } from "../../graphics/universes/universes.manifest.ts";
 import type { AssetStore } from "../assets/AssetStore.ts";
 import { createAssetStore } from "../assets/index.ts";
+import type { ShaderStore } from "../shaders/index.ts";
 import { debug, type DebugManager } from "../debug/index.ts";
 import { UniverseRegistry } from "../registries/UniverseRegistry/UniverseRegistry.ts";
 import { StatsManager } from "../stats/index.ts";
+import type { UniverseBase } from "../universes/Universe.base.ts";
 import type Input from "./Input.ts";
 import Runtime from "./Runtime.ts";
 import State from "./State.ts";
+import {
+  SHADER_MANIFEST,
+  type AppShaderManifest,
+} from "../../graphics/shaders/shaders.manifest.ts";
+import { createShaderStore } from "../shaders/index.ts";
 
 export interface IThreeDeviceSlice {
   renderer: WebGLRenderer;
   assets: AssetStore<AppAssetManifest>;
+  shaders: ShaderStore<AppShaderManifest>;
   debug: DebugManager;
   input: Input;
   stats: StatsManager;
+  readonly postFxPass: PostProcessingPass;
 }
 
 /**
@@ -34,12 +50,14 @@ export default class ThreeDevice implements IThreeDeviceSlice {
   private readonly _canvas: HTMLCanvasElement;
   readonly renderer: WebGLRenderer;
   readonly assets: AssetStore<AppAssetManifest>;
+  readonly shaders: ShaderStore<AppShaderManifest>;
   readonly debug: DebugManager;
   readonly stats: StatsManager;
   private readonly _state: State;
   private readonly _registry: UniverseRegistry<UniverseId>;
   private readonly _runtime: Runtime<UniverseId>;
   private readonly _inputAdapter: DOMInputAdapter;
+  private readonly _orbitCameraHelper: OrbitCameraHelper;
   private _debugUnsubscribeStats: (() => void) | null = null;
   private readonly _onViewportChange = (): void => {
     this.resize(this._canvas.clientWidth, this._canvas.clientHeight);
@@ -53,10 +71,12 @@ export default class ThreeDevice implements IThreeDeviceSlice {
       canvas,
       ...config,
     });
+    this.renderer.outputColorSpace = SRGBColorSpace;
     this.renderer.setPixelRatio(
       Math.min(globalThis.window?.devicePixelRatio ?? 1, 2)
     );
     this.assets = createAssetStore(ASSET_MANIFEST);
+    this.shaders = createShaderStore(SHADER_MANIFEST);
     this.debug = debug;
     this.stats = new StatsManager(this.renderer);
 
@@ -72,8 +92,19 @@ export default class ThreeDevice implements IThreeDeviceSlice {
       this._registry,
       this._state
     );
+    this._orbitCameraHelper = new OrbitCameraHelper(
+      this.renderer.domElement,
+      this._getActiveUniverse,
+      {
+        dampingFactor: 0.08,
+      }
+    );
     this._inputAdapter = new DOMInputAdapter();
     this._runtime.raf.setStats(this.stats);
+  }
+
+  get postFxPass(): PostProcessingPass {
+    return this._runtime.output.postFxPass;
   }
 
   get canvas(): HTMLCanvasElement {
@@ -112,10 +143,12 @@ export default class ThreeDevice implements IThreeDeviceSlice {
     this._runtime.init();
     this.debug.init(DEBUG_CONFIG);
     this._inputAdapter.attach(this._canvas, this._runtime.input);
+    this._orbitCameraHelper.bindInput(this._runtime.input);
     this._bindDebugControls();
 
     const defaultId = this._registry.getDefaultId();
     if (defaultId) await this._runtime.activateUniverse(defaultId);
+    this._runtime.resize(this._canvas.clientWidth, this._canvas.clientHeight);
 
     this._handleEvents();
 
@@ -170,6 +203,7 @@ export default class ThreeDevice implements IThreeDeviceSlice {
         };
       },
     });
+
   }
 
   start(): void {
@@ -208,9 +242,14 @@ export default class ThreeDevice implements IThreeDeviceSlice {
     await this.stats.setPerfEnabled(enabled);
   }
 
+  toggleOrbitCamera(): boolean {
+    return this._orbitCameraHelper.toggle();
+  }
+
   resize(width: number, height: number): void {
     this._state.setViewport(width, height);
     this.renderer.setSize(width, height, false);
+    this._orbitCameraHelper.resize(width, height);
     this._runtime.resize(width, height);
   }
 
@@ -233,8 +272,14 @@ export default class ThreeDevice implements IThreeDeviceSlice {
     this._debugUnsubscribeStats?.();
     this._debugUnsubscribeStats = null;
     this.debug.dispose();
+    this._orbitCameraHelper.dispose();
     this.stats.dispose();
     this.assets.disposeAll();
     this.renderer.dispose();
   }
+
+  private readonly _getActiveUniverse = (): UniverseBase<UniverseId> | null => {
+    const active = this._runtime.output.getActiveUniverses();
+    return (active.at(-1) as UniverseBase<UniverseId> | undefined) ?? null;
+  };
 }

@@ -3,7 +3,7 @@ import { FOLDER_ID, TAB_ID } from "./Debug.id.ts";
 
 export const DEBUG_CONFIG: DebugConfig = {
   tabs: [
-    { id: TAB_ID.UNIVERSE, label: "Universe", visible: true, order: 1 },
+    { id: TAB_ID.UNIVERSE, label: "Universe", visible: false, order: 1 },
     { id: TAB_ID.NODES, label: "Nodes", visible: true, order: 2 },
     { id: TAB_ID.RENDER, label: "Render", visible: true, order: 3 },
   ],
@@ -13,7 +13,7 @@ export const DEBUG_CONFIG: DebugConfig = {
       tabId: TAB_ID.UNIVERSE,
       label: "Main Universe",
       visible: true,
-      expanded: true,
+      expanded: false,
       order: 1,
     },
     {
@@ -21,7 +21,7 @@ export const DEBUG_CONFIG: DebugConfig = {
       tabId: TAB_ID.NODES,
       label: "Swap",
       visible: true,
-      expanded: true,
+      expanded: false,
       order: 1,
     },
     {
@@ -29,7 +29,7 @@ export const DEBUG_CONFIG: DebugConfig = {
       tabId: TAB_ID.RENDER,
       label: "PostFX",
       visible: true,
-      expanded: true,
+      expanded: false,
       order: 1,
     },
     {
@@ -37,7 +37,7 @@ export const DEBUG_CONFIG: DebugConfig = {
       tabId: TAB_ID.RENDER,
       label: "Stats",
       visible: true,
-      expanded: true,
+      expanded: false,
       order: 2,
     },
   ],

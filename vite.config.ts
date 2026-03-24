@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import glsl from 'vite-plugin-glsl';
 
 export default defineConfig({
     resolve: {
@@ -13,7 +14,7 @@ export default defineConfig({
         },
     },
     server: {
-        port: 5173,
+        port: 7826,
     },
     build: {
         outDir: 'dist',
@@ -35,4 +36,21 @@ export default defineConfig({
             },
         },
     },
+
+    plugins: [glsl({
+        include: [
+            // Glob pattern, or array of glob patterns to import
+            "**/*.glsl",
+            "**/*.wgsl",
+            "**/*.vert",
+            "**/*.frag",
+            "**/*.vs",
+            "**/*.fs",
+        ],
+        exclude: undefined, // Glob pattern, or array of glob patterns to ignore
+        warnDuplicatedImports: true, // Warn if the same chunk was imported multiple times
+        defaultExtension: "glsl", // Shader suffix when no extension is specified
+        watch: true, // Recompile shader on change
+        root: "/src/graphics/nodes", // Directory for root imports
+    })],
 });

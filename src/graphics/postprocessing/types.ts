@@ -23,6 +23,7 @@ export interface FinalFxConfig {
   vignetteStrength: number;
   vignettePower: number;
   vignetteColor: VignetteColor;
+  customUniforms?: Record<string, number>;
 }
 
 export interface BloomFxConfig {

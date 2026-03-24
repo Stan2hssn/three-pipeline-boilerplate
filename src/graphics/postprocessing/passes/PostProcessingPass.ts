@@ -114,6 +114,14 @@ export class PostProcessingPass implements IPass {
     this._disposeComposer();
   }
 
+  get finalEffect(): FinalEffect | null {
+    return this._finalEffect;
+  }
+
+  get config(): PostFxConfig {
+    return this._config;
+  }
+
   setGrainTexture(texture: Texture | null): void {
     this._grainTexture = texture;
     this._finalEffect?.setNoiseTexture(texture);
@@ -194,6 +202,7 @@ export class PostProcessingPass implements IPass {
         ),
         blendFunction: toBlendFunction(this._config.final.blend),
         noiseTexture: this._grainTexture,
+        customUniforms: this._config.final.customUniforms,
       });
       effects.push(this._finalEffect);
     }

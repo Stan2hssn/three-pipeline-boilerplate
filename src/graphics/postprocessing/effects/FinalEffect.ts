@@ -1,9 +1,8 @@
 import type { BlendFunction } from "postprocessing";
 import { Effect } from "postprocessing";
-import { Color, Uniform, Vector2 } from "three";
 import type { Texture } from "three";
-// @ts-ignore raw shader import by Vite
-import fragmentShader from "./shaders/final.frag?raw";
+import { Color, Uniform, Vector2 } from "three";
+import { SHADER_KEYS, SHADERS } from "@graphics/shaders/index.ts";
 
 export interface FinalEffectOptions {
   blendFunction: BlendFunction;
@@ -15,11 +14,13 @@ export interface FinalEffectOptions {
   vignettePower: number;
   vignetteColor: Color;
   noiseTexture?: Texture | null;
+  customUniforms?: Record<string, number>;
 }
 
 export class FinalEffect extends Effect {
   constructor(options: FinalEffectOptions) {
     const noiseTexture = options.noiseTexture ?? null;
+    const fragmentShader = SHADERS.require(SHADER_KEYS.postfx.finalFragment);
 
     super("FinalEffect", fragmentShader, {
       blendFunction: options.blendFunction,
@@ -44,6 +45,12 @@ export class FinalEffect extends Effect {
         ["uVignetteDarkness", new Uniform(options.vignetteStrength)],
       ]),
     });
+
+    if (options.customUniforms) {
+      for (const [key, value] of Object.entries(options.customUniforms)) {
+        this.uniforms.set(key, new Uniform(value));
+      }
+    }
   }
 
   update(

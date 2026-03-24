@@ -23,23 +23,31 @@ void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor)
 
   vec3 col = inputColor.rgb;
 
-    // ---------------------------
-    // Film grain (tileable + animated)
-    // ---------------------------
+  // ---------------------------
+  // Film grain (tileable + animated)
+  // ---------------------------
   vec2 aspect = vec2(uResolution.x / uResolution.y, 1.0);
 
-    // animated offset to avoid static pattern
+  // animated offset to avoid static pattern
   vec2 gUv = fract((uv * aspect) * uGrainScale);
 
-    // map to [-1, 1]
+  // map to [-1, 1]
   float g = texture(tGrain, gUv).r * 2.0 - 1.0;
 
-    // less grain on highlights
+  // less grain on highlights
   float lum = luma(col);
-  float grainAtten = mix(1.0, 0.35, smoothstep(0.0, 1.0, lum)) * uVignetteStrength;
+  float grainAtten = mix(1.0, 0.35, smoothstep(0.0, 1.0, lum));
 
   col += g * uNoiseStrength * grainAtten;
   col = clamp(col, 0.0, 1.0);
+
+  vec2 vignetteUv = uv - uVignetteCenter;
+  vignetteUv.x *= uResolution.x / max(uResolution.y, 1.0);
+  float dist = length(vignetteUv);
+  float vignette = smoothstep(uVignetteRadius, 1.0, dist);
+  vignette = pow(vignette, max(uVignettePower, 0.0001));
+  float vignetteMix = clamp(vignette * uVignetteStrength, 0.0, 1.0);
+  col = mix(col, uVignetteColor, vignetteMix);
 
   outputColor = vec4(col, inputColor.a);
 }

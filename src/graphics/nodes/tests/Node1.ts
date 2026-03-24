@@ -1,29 +1,24 @@
 // Node1.ts
 
-import type { IObject3DNode } from "@/_core/nodes/Object3DNode.interface";
+import { Object3DNodeBase } from "@/_core";
 import { getGsap } from "@/plugins/gsap";
-import { BoxGeometry, Material, Mesh, MeshBasicMaterial, Object3D } from "three";
+import { NODE_ID } from "@graphics/nodes/Node.id.ts";
+import { BoxGeometry, Material, Mesh, MeshBasicMaterial } from "three";
 
-export class Node1 implements IObject3DNode {
-    public readonly id = 'node-1';
-    public readonly name = 'Node 1';
-    public readonly active = true;
-    public readonly mounted = false;
-
+export class Node1 extends Object3DNodeBase {
     private readonly mesh: Mesh;
 
     constructor() {
         const geo = new BoxGeometry(1, 1, 1);
-        const mat = new MeshBasicMaterial({ color: 0xff5555 });
-        this.mesh = new Mesh(geo, mat);
+        const mat = new MeshBasicMaterial({ color: 0xFFFDB6 });
+        const mesh = new Mesh(geo, mat);
+        super(NODE_ID.NODE_1, "Node 1", mesh);
+
+        this.mesh = mesh;
         this.mesh.position.x = 2;
 
         // Start hidden; entry anim happens onMounted (fire-and-forget)
         this.mesh.scale.set(0, 0, 0);
-    }
-
-    getObject3D(): Object3D {
-        return this.mesh;
     }
 
     beforeMount(): void {
@@ -33,6 +28,7 @@ export class Node1 implements IObject3DNode {
     }
 
     onMounted(): void {
+        super.onMounted();
         // Entry animation (not awaited)
         getGsap().then((gsap) => {
             gsap.killTweensOf(this.mesh.scale);
@@ -64,13 +60,13 @@ export class Node1 implements IObject3DNode {
     }
 
     onUnmounted(): void {
+        super.onUnmounted();
         // Structural cleanup only
         // (scene.remove is handled by NodeGraph)
     }
 
     update(_time: number, _dt: number): void {
-        // this.mesh.rotation.y += 0.01;
-        // this.mesh.rotation.x += 0.01;
+        //
     }
 
     dispose(): void {
