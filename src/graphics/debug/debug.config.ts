@@ -25,22 +25,6 @@ export const DEBUG_CONFIG: DebugConfig = {
       order: 1,
     },
     {
-      id: FOLDER_ID.FISH_TEST,
-      tabId: TAB_ID.NODES,
-      label: "Fish Test",
-      visible: false,
-      expanded: false,
-      order: 2,
-    },
-    {
-      id: FOLDER_ID.FISH_SCHOOL,
-      tabId: TAB_ID.NODES,
-      label: "Fish School",
-      visible: true,
-      expanded: false,
-      order: 3,
-    },
-    {
       id: FOLDER_ID.POSTFX,
       tabId: TAB_ID.RENDER,
       label: "PostFX",

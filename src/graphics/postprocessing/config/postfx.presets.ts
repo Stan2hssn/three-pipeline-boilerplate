@@ -53,11 +53,6 @@ export const POSTFX_PRESETS: Record<PostFxQuality, PostFxConfig> = {
       vignetteStrength: 0.85,
       vignettePower: 1.2,
       vignetteColor: { r: 0.02, g: 0.03, b: 0.08 },
-      customUniforms: {
-        uOceanDepthStrength: 0.6,
-        uCausticsStrength: 0.4,
-        uCausticsScale: 4,
-      },
     },
     bloom: {
       enabled: true,
