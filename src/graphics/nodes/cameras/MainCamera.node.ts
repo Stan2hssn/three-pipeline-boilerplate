@@ -19,10 +19,10 @@ export class MainCameraInputNode extends NodeBase {
     );
     this._baseX = 0;
     this._baseY = 2;
-    this._baseZ = 4;
+    this._baseZ = 0;
 
     this._camera.position.set(this._baseX, this._baseY, this._baseZ);
-    this._camera.lookAt(0, 0, 0);
+    this._camera.lookAt(0, 0, -4);
   }
 
   get camera(): PerspectiveCamera {
@@ -34,7 +34,7 @@ export class MainCameraInputNode extends NodeBase {
       this._camera.position.x = this._baseX + smoothMouse.nx * 0.8;
       this._camera.position.y = this._baseY + smoothMouse.ny * 0.8;
       this._camera.position.z = this._baseZ + Math.abs(smoothMouse.nx) * 0.2;
-      this._camera.lookAt(0, 0, 0);
+      this._camera.lookAt(0, 0, -4);
     });
   }
 
