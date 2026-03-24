@@ -1,3 +1,4 @@
+import { EventInput } from "@_core/helpers/event/Input.events.ts";
 import type Input from "@_core/systems/Input.ts";
 import type { InputEventPayloadMap } from "@_core/systems/Input.ts";
 import type INode from "./Node.interface.ts";
@@ -58,12 +59,12 @@ export abstract class NodeBase implements INode {
   }
 
   protected inputSubscribe<K extends keyof InputEventPayloadMap>(
-    eventType: K,
+    eventType: EventInput | K,
     handler: (payload: InputEventPayloadMap[K]) => void
   ): () => void {
-    if (!this._input) return () => {};
+    if (!this._input) return () => { };
 
-    const unsubscribe = this._input.subscribe(eventType, handler);
+    const unsubscribe = this._input.subscribe(eventType as K, handler);
     this._inputUnsubscribers.add(unsubscribe);
 
     return () => {

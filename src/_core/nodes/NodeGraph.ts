@@ -1,7 +1,7 @@
 // NodeGraph.ts
 import type { Scene } from 'three';
 import type INode from './Node.interface';
-import type { IObject3DNode } from './Object3DNode.interface';
+import type { IObject3DNode } from './object3d/Object3DNode.interface';
 
 function isObject3DNode(node: INode): node is IObject3DNode {
   return typeof (node as IObject3DNode).getObject3D === 'function';
@@ -10,6 +10,8 @@ function isObject3DNode(node: INode): node is IObject3DNode {
 export class NodeGraph {
   private readonly nodes = new Map<string, INode>();
   private readonly mounted = new Set<string>();
+  private readonly _mountObservers = new Set<(node: INode) => void>();
+  private readonly _unmountObservers = new Set<(node: INode) => void>();
 
   private readonly scene: Scene;
 
@@ -44,6 +46,20 @@ export class NodeGraph {
     return this.mounted.has(id);
   }
 
+  addMountObserver(handler: (node: INode) => void): () => void {
+    this._mountObservers.add(handler);
+    return () => {
+      this._mountObservers.delete(handler);
+    };
+  }
+
+  addUnmountObserver(handler: (node: INode) => void): () => void {
+    this._unmountObservers.add(handler);
+    return () => {
+      this._unmountObservers.delete(handler);
+    };
+  }
+
   /** Mount = setup -> attach scene (if Object3D) -> onMounted (can start entry anim). */
   async mount(id: string): Promise<void> {
     if (this.mounted.has(id)) return;
@@ -63,6 +79,9 @@ export class NodeGraph {
     node.onMounted?.();
 
     this.mounted.add(id);
+    for (const handler of this._mountObservers) {
+      handler(node);
+    }
   }
 
   /** Unmount = await beforeUnmount (exit anim) -> detach scene -> onUnmounted cleanup. */
@@ -81,6 +100,10 @@ export class NodeGraph {
     }
 
     node.onUnmounted?.();
+
+    for (const handler of this._unmountObservers) {
+      handler(node);
+    }
 
     this.mounted.delete(id);
   }
@@ -114,5 +137,7 @@ export class NodeGraph {
     }
     this.nodes.clear();
     this.mounted.clear();
+    this._mountObservers.clear();
+    this._unmountObservers.clear();
   }
 }

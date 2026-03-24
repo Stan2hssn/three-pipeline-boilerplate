@@ -24,6 +24,7 @@ export class DebugManager {
   private _knownTabIds = new Set<string>();
   private _knownFolderIds = new Set<string>();
   private _isInitialized = false;
+  private readonly _snapshotProviders = new Map<string, () => Record<string, unknown>>();
 
   init(config: DebugConfig): void {
     if (this._isInitialized) return;
@@ -57,6 +58,11 @@ export class DebugManager {
       current.cleanup?.();
       this._subscriptions.delete(key);
     };
+  }
+
+  registerSnapshot(id: string, provider: () => Record<string, unknown>): () => void {
+    this._snapshotProviders.set(id, provider);
+    return () => { this._snapshotProviders.delete(id); };
   }
 
   setVisible(visible: boolean): void {
@@ -117,6 +123,16 @@ export class DebugManager {
     this._folderApis.clear();
     this._knownTabIds.clear();
     this._knownFolderIds.clear();
+
+    this._pane.addButton({ title: "Copy All Config" }).on("click", () => {
+      const snapshot: Record<string, unknown> = {};
+      for (const [id, provider] of this._snapshotProviders) {
+        snapshot[id] = provider();
+      }
+      const text = JSON.stringify(snapshot, null, 2);
+      void navigator.clipboard.writeText(text);
+      console.log("[Debug] All config copied:\n", text);
+    });
 
     const visibleTabs = byOrder(this._config.tabs).filter((tab) => tab.visible);
     const tabsById = new Map(this._config.tabs.map((tab) => [tab.id, tab]));

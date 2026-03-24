@@ -33,11 +33,24 @@ export interface InputWheelEvent {
   sourceEvent?: WheelEvent;
 }
 
+export interface InputKeyboardEvent {
+  key: string;
+  code: string;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+  altKey: boolean;
+  metaKey: boolean;
+  repeat: boolean;
+  sourceEvent?: KeyboardEvent;
+}
+
 export type InputEventPayloadMap = {
   mousemove: InputMouseMoveEvent;
   mousedown: InputMouseMoveEvent;
   mouseup: InputMouseMoveEvent;
   wheel: InputWheelEvent;
+  keydown: InputKeyboardEvent;
+  keyup: InputKeyboardEvent;
 };
 
 type InputHandler<T> = (payload: T) => void;
@@ -172,6 +185,32 @@ export default class Input {
     this._emit("wheel", {
       deltaY,
       mouse: this._mouse,
+      sourceEvent,
+    });
+  }
+
+  emitKeyDown(sourceEvent: KeyboardEvent): void {
+    this._emit("keydown", {
+      key: sourceEvent.key,
+      code: sourceEvent.code,
+      shiftKey: sourceEvent.shiftKey,
+      ctrlKey: sourceEvent.ctrlKey,
+      altKey: sourceEvent.altKey,
+      metaKey: sourceEvent.metaKey,
+      repeat: sourceEvent.repeat,
+      sourceEvent,
+    });
+  }
+
+  emitKeyUp(sourceEvent: KeyboardEvent): void {
+    this._emit("keyup", {
+      key: sourceEvent.key,
+      code: sourceEvent.code,
+      shiftKey: sourceEvent.shiftKey,
+      ctrlKey: sourceEvent.ctrlKey,
+      altKey: sourceEvent.altKey,
+      metaKey: sourceEvent.metaKey,
+      repeat: sourceEvent.repeat,
       sourceEvent,
     });
   }
