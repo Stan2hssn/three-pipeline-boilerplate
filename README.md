@@ -1,4 +1,26 @@
 📘 README — Architecture Core / Graphics (Option 2 – Générique)
+🚀 Demarrage
+
+Le template tourne sur Nuxt 4. Le moteur 3D vit dans `src/`, hors du `srcDir`
+Nuxt : une nouvelle version du template s'y recopie sans rebaser un import.
+La couche Vue (`app/`) ne fait que monter un canvas et publier le device.
+
+```bash
+pnpm install
+pnpm dev
+```
+
+| Chemin | Role |
+| --- | --- |
+| `src/_core/` | Moteur generique, sans Three.js ni Vue |
+| `src/graphics/` | Implementation Three.js : univers, nodes, passes, postfx |
+| `app/` | Couche Nuxt : `ThreeStage.client.vue` monte le canvas, `useThreeStage` le publie |
+| `nuxt.config.ts` | Alias `@`, `@_core`, `@graphics`, plugin GLSL, inclusion de `src/` au typecheck |
+
+Le canvas est monte cote client uniquement (`.client.vue`) : WebGL n'existe pas
+au rendu serveur. La page reste servie par le serveur, seul le canvas attend
+l'hydratation.
+
 🎯 Objectif
 
 Construire une architecture stable, lisible et évolutive pour des applications 3D temps réel (Three.js aujourd’hui, autre backend demain), en séparant strictement :
@@ -264,7 +286,7 @@ src/
 │  │  └─ impl/
 │  │     └─ Main.universe.ts
 │
-└─ main.ts
+└─ shims.d.ts
 
 ✅ Bénéfices
 

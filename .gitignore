@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Nuxt
+.nuxt
+.output
+.data
+.nitro
+.cache
+
 # Assets sources (uncompressed - not committed)
 assets-source/*
 
