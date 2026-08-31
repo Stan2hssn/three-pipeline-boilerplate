@@ -12,7 +12,7 @@ export const POSTFX_PRESETS: Record<PostFxQuality, PostFxConfig> = {
       vignetteRadius: 0.3,
       vignetteStrength: 0,
       vignettePower: 0.8,
-      vignetteColor: { r: 0.06, g: 0.07, b: 0.1 },
+      vignetteColor: { r: 0, g: 0, b: 0 },
     },
     bloom: {
       enabled: false,
@@ -32,7 +32,7 @@ export const POSTFX_PRESETS: Record<PostFxQuality, PostFxConfig> = {
       vignetteRadius: 0.3,
       vignetteStrength: 0.12,
       vignettePower: 0.8,
-      vignetteColor: { r: 0.06, g: 0.07, b: 0.1 },
+      vignetteColor: { r: 0, g: 0, b: 0 },
     },
     bloom: {
       enabled: true,
@@ -49,10 +49,10 @@ export const POSTFX_PRESETS: Record<PostFxQuality, PostFxConfig> = {
       grainScale: 6,
       blend: "normal",
       vignetteCenter: { x: 0.5, y: 0.5 },
-      vignetteRadius: 0.25,
-      vignetteStrength: 0.85,
-      vignettePower: 1.2,
-      vignetteColor: { r: 0.02, g: 0.03, b: 0.08 },
+      vignetteRadius: 0.3,
+      vignetteStrength: 0,
+      vignettePower: 0.8,
+      vignetteColor: { r: 0, g: 0, b: 0 },
     },
     bloom: {
       enabled: true,
@@ -72,7 +72,7 @@ export const POSTFX_PRESETS: Record<PostFxQuality, PostFxConfig> = {
       vignetteRadius: 0.3,
       vignetteStrength: 0.18,
       vignettePower: 0.8,
-      vignetteColor: { r: 0.06, g: 0.07, b: 0.1 },
+      vignetteColor: { r: 0, g: 0, b: 0 },
     },
     bloom: {
       enabled: true,

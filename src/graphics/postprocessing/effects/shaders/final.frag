@@ -13,7 +13,7 @@ uniform vec2 uVignetteCenter;      // usually vec2(0.5, 0.5)
 uniform float uVignetteRadius;      // 0.45..0.75 (where dimming starts)
 uniform float uVignetteStrength;    // 0..1  (how strong)
 uniform float uVignettePower;       // 1.2..3.0 (falloff)
-uniform vec3 uVignetteColor;       // subtle cool tint, e.g. vec3(0.04,0.05,0.08)
+uniform vec3 uVignetteColor;       // neutral by default; tint per project
 
 float luma(vec3 c) {
   return dot(c, vec3(0.2126, 0.7152, 0.0722));
