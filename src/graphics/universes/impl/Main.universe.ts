@@ -10,6 +10,7 @@ import { Node1 } from "@graphics/nodes/tests/Node1.ts";
 import { Node1B } from "@graphics/nodes/tests/Node1B.ts";
 import { Node2 } from "@graphics/nodes/tests/Node2.ts";
 import { ForwardRenderPass } from "@graphics/passes/ForwardRenderPass.ts";
+import { OutputPass } from "@graphics/postprocessing/index.ts";
 import { Scene } from "three";
 import type { UniverseId } from "../Universe.id.ts";
 import { UNIVERSE_ID } from "../Universe.id.ts";
@@ -29,7 +30,8 @@ export class MainUniverse extends UniverseBase<UniverseId> {
     const camera = cameraNode.camera;
 
     const graph = new NodeGraph(scene);
-    const pipeline = new PipelineBase([new ForwardRenderPass()]);
+    const output = new OutputPass();
+    const pipeline = new PipelineBase([new ForwardRenderPass(output.target), output]);
 
     super(
       UNIVERSE_ID.MAIN,
