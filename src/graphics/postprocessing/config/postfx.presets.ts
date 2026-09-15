@@ -82,3 +82,28 @@ export const POSTFX_PRESETS: Record<PostFxQuality, PostFxConfig> = {
     },
   },
 };
+
+/**
+ * Passe de correction finale, utilisee par `Output` quand le post-traitement
+ * principal est coupe. Elle ne fait que la correction : tout effet reste eteint.
+ */
+export const FINAL_CORRECTION_PRESET: PostFxConfig = {
+  enabled: true,
+  final: {
+    enabled: true,
+    noise: 0,
+    grainScale: 1,
+    blend: "normal",
+    vignetteCenter: { x: 0.5, y: 0.5 },
+    vignetteRadius: 1,
+    vignetteStrength: 0,
+    vignettePower: 1,
+    vignetteColor: { r: 0, g: 0, b: 0 },
+  },
+  bloom: {
+    enabled: false,
+    intensity: 0,
+    threshold: 1,
+    radius: 0,
+  },
+};

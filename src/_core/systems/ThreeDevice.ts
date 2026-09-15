@@ -1,4 +1,5 @@
 import {
+  PCFSoftShadowMap,
   SRGBColorSpace,
   WebGLRenderer,
   type Texture,
@@ -13,12 +14,14 @@ import {
 } from "../../graphics/assets/assets.manifest.ts";
 import { DEBUG_CONFIG } from "../../graphics/debug/debug.config.ts";
 import { FOLDER_ID, TAB_ID } from "../../graphics/debug/Debug.id.ts";
-import { PostProcessingPass } from "../../graphics/postprocessing/passes/PostProcessingPass.ts";
+import { DEVICE_CONFIG } from "../../graphics/device/device.config.ts";
+import type { PostProcessingPass } from "../../graphics/postprocessing/passes/PostProcessingPass.ts";
 import type { UniverseId } from "../../graphics/universes/Universe.id.ts";
 import { UNIVERSE_MANIFEST } from "../../graphics/universes/universes.manifest.ts";
 import type { AssetStore } from "../assets/AssetStore.ts";
 import { createAssetStore } from "../assets/index.ts";
 import type { ShaderStore } from "../shaders/index.ts";
+import { isDebugRequested, isStatsRequested } from "../debug/DebugFlags.ts";
 import { debug, type DebugManager } from "../debug/index.ts";
 import { UniverseRegistry } from "../registries/UniverseRegistry/UniverseRegistry.ts";
 import { StatsManager } from "../stats/index.ts";
@@ -45,6 +48,9 @@ export interface IThreeDeviceSlice {
 /**
  * ThreeDevice - Creates canvas + WebGLRenderer, Runtime from _core,
  * registers manifest, activates initial universes.
+ *
+ * Identique dans tous les projets : ce qui est propre a l'un d'eux passe par
+ * `DEVICE_CONFIG` (`src/graphics/device/device.config.ts`).
  */
 export default class ThreeDevice implements IThreeDeviceSlice {
   private readonly _canvas: HTMLCanvasElement;
@@ -59,6 +65,7 @@ export default class ThreeDevice implements IThreeDeviceSlice {
   private readonly _inputAdapter: DOMInputAdapter;
   private readonly _orbitCameraHelper: OrbitCameraHelper;
   private _debugUnsubscribeStats: (() => void) | null = null;
+  private _projectDebugUnsubscribers: (() => void)[] = [];
   private readonly _onViewportChange = (): void => {
     this.resize(this._canvas.clientWidth, this._canvas.clientHeight);
   };
@@ -72,8 +79,20 @@ export default class ThreeDevice implements IThreeDeviceSlice {
       ...config,
     });
     this.renderer.outputColorSpace = SRGBColorSpace;
+
+    const rendererConfig = DEVICE_CONFIG.renderer ?? {};
+    const shadowMap = rendererConfig.shadowMap ?? PCFSoftShadowMap;
+    if (shadowMap !== false) {
+      this.renderer.shadowMap.enabled = true;
+      this.renderer.shadowMap.type = shadowMap;
+    }
+    const maxPixelRatio = rendererConfig.maxPixelRatio ?? 2;
+    const coarsePointer = globalThis.matchMedia?.("(pointer: coarse)").matches ?? false;
     this.renderer.setPixelRatio(
-      Math.min(globalThis.window?.devicePixelRatio ?? 1, 2)
+      Math.min(
+        globalThis.window?.devicePixelRatio ?? 1,
+        coarsePointer ? (rendererConfig.maxPixelRatioCoarse ?? maxPixelRatio) : maxPixelRatio
+      )
     );
     this.assets = createAssetStore(ASSET_MANIFEST);
     this.shaders = createShaderStore(SHADER_MANIFEST);
@@ -105,6 +124,15 @@ export default class ThreeDevice implements IThreeDeviceSlice {
 
   get postFxPass(): PostProcessingPass {
     return this._runtime.output.postFxPass;
+  }
+
+  /**
+   * L'adaptateur d'entree, pour ce qui doit lui parler depuis un geste : iOS
+   * n'accorde le capteur d'inclinaison qu'a un appel issu d'un clic, et un appel
+   * relaye par le moteur est juge trop loin du geste.
+   */
+  get inputAdapter(): DOMInputAdapter {
+    return this._inputAdapter;
   }
 
   get canvas(): HTMLCanvasElement {
@@ -139,12 +167,21 @@ export default class ThreeDevice implements IThreeDeviceSlice {
 
     const grainTexture = this.assets.get<Texture>(ASSET_KEYS.postfx.grainTexture);
     this._runtime.output.setPostFxGrainTexture(grainTexture ?? null);
+    DEVICE_CONFIG.onBoot?.(this);
 
     this._runtime.init();
-    this.debug.init(DEBUG_CONFIG);
+    // TOUJOURS, panneau ou non : les valeurs enregistrees sont la configuration
+    // de la scene. Les charger seulement avec `?debug` donnerait deux scenes
+    // differentes selon l'URL.
+    if (DEVICE_CONFIG.debugPersistence) this.debug.setPersistence(DEVICE_CONFIG.debugPersistence);
+    // Le PANNEAU, lui, reste sur demande. Non initialise, les abonnements
+    // s'enregistrent sans effet et reviennent intacts des que l'URL le demande.
+    if (isDebugRequested()) this.debug.init(DEBUG_CONFIG);
+    if (isStatsRequested()) void this.stats.setBasicEnabled(true);
     this._inputAdapter.attach(this._canvas, this._runtime.input);
     this._orbitCameraHelper.bindInput(this._runtime.input);
     this._bindDebugControls();
+    this._projectDebugUnsubscribers = DEVICE_CONFIG.bindDebug?.(this) ?? [];
 
     const defaultId = this._registry.getDefaultId();
     if (defaultId) await this._runtime.activateUniverse(defaultId);
@@ -271,6 +308,8 @@ export default class ThreeDevice implements IThreeDeviceSlice {
     this._inputAdapter.dispose();
     this._debugUnsubscribeStats?.();
     this._debugUnsubscribeStats = null;
+    for (const unsubscribe of this._projectDebugUnsubscribers) unsubscribe();
+    this._projectDebugUnsubscribers = [];
     this.debug.dispose();
     this._orbitCameraHelper.dispose();
     this.stats.dispose();

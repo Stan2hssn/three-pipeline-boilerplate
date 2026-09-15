@@ -1,5 +1,9 @@
-import { POSTFX_PRESETS, PostProcessingPass } from "@graphics/postprocessing/index.ts";
-import type { PostFxConfig } from "@graphics/postprocessing/types.ts";
+import { DEVICE_CONFIG } from "@graphics/device/device.config.ts";
+import {
+  FINAL_CORRECTION_PRESET,
+  POSTFX_PRESETS,
+  PostProcessingPass,
+} from "@graphics/postprocessing/index.ts";
 import {
   NoToneMapping,
   SRGBColorSpace,
@@ -23,28 +27,16 @@ export default class Output {
 
   constructor(renderer: WebGLRenderer) {
     this._renderer = renderer;
+    // three remet ses compteurs a zero a CHAQUE appel de render(). L'
+    // EffectComposer en fait plusieurs par image, si bien qu'un lecteur
+    // exterieur — la sonde, un panneau de stats — ne verrait que la derniere
+    // passe : un triangle plein ecran, donc « 1 draw call ». On prend la main
+    // sur la remise a zero pour que les compteurs couvrent l'image entiere.
+    this._renderer.info.autoReset = false;
     this._postFxPass = new PostProcessingPass(POSTFX_PRESETS.medium);
-    const finalCorrectionConfig: PostFxConfig = {
-      enabled: true,
-      final: {
-        enabled: true,
-        noise: 0,
-        grainScale: 1,
-        blend: "normal",
-        vignetteCenter: { x: 0.5, y: 0.5 },
-        vignetteRadius: 1,
-        vignetteStrength: 0,
-        vignettePower: 1,
-        vignetteColor: { r: 0, g: 0, b: 0 },
-      },
-      bloom: {
-        enabled: false,
-        intensity: 0,
-        threshold: 1,
-        radius: 0,
-      },
-    };
-    this._finalCorrectionPass = new PostProcessingPass(finalCorrectionConfig);
+    // Le preset est au projet : sa forme suit le `PostFxConfig` de SA chaine de
+    // post-traitement, que le core ne connait pas.
+    this._finalCorrectionPass = new PostProcessingPass(FINAL_CORRECTION_PRESET);
   }
 
   get renderer(): WebGLRenderer {
@@ -53,6 +45,10 @@ export default class Output {
 
   get postFxPass(): PostProcessingPass {
     return this._postFxPass;
+  }
+
+  isPostFxEnabled(): boolean {
+    return this._postFxEnabled;
   }
 
   getActiveUniverses(): UniverseBase<string>[] {
@@ -133,6 +129,9 @@ export default class Output {
   render(frame: FrameTiming): void {
     const activeMounted = Array.from(this._activeUniverses).filter((u) => u.mounted);
     if (activeMounted.length === 0) return;
+    // Pendant de `autoReset = false` : une seule remise a zero par image, ici,
+    // avant que la moindre passe ne dessine — hors ecran compris.
+    this._renderer.info.reset();
 
     // Hors ecran d'abord, et pour TOUS les univers montes : le post-traitement
     // et la correction finale rendent la scene sans passer par le pipeline de
@@ -188,7 +187,9 @@ export default class Output {
   private _prepareRendererState(): void {
     this._renderer.outputColorSpace = SRGBColorSpace;
     this._renderer.toneMapping = NoToneMapping;
-    this._renderer.toneMappingExposure = 1;
+    // Relue a chaque image : un projet dont le tone mapping vit dans sa chaine
+    // de post-traitement peut la regler en direct (voir `DeviceConfig`).
+    this._renderer.toneMappingExposure = DEVICE_CONFIG.renderer?.toneMappingExposure ?? 1;
 
     this._renderer.getSize(this._viewportSize);
     const width = this._viewportSize.x;
