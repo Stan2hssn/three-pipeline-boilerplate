@@ -22,9 +22,24 @@ export interface DebugFolderConfig {
 export interface DebugConfig {
   tabs: DebugTabConfig[];
   folders: DebugFolderConfig[];
+  /**
+   * Prefixe des drapeaux d'URL retenus en session (`<prefixe>:debug`).
+   * `sessionStorage` est partage par origine : deux projets servis sur
+   * `localhost` se passeraient sinon leurs drapeaux.
+   */
+  sessionPrefix?: string;
 }
 
 export type DebugTarget = TabPageApi | FolderApi;
+
+/**
+ * Ce que rend `addBinding`.
+ *
+ * `tweakpane` n'exporte pas le nom `BindingApi` : on deduit le type de la
+ * methode elle-meme plutot que de le retaper, sinon une montee de version le
+ * ferait diverger en silence.
+ */
+export type DebugBinding = ReturnType<FolderApi["addBinding"]>;
 
 export interface DebugSubscriptionOptions {
   ownerId: string;

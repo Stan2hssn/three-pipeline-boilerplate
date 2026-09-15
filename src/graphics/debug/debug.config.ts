@@ -2,6 +2,8 @@ import type { DebugConfig } from "@_core/debug/index.ts";
 import { FOLDER_ID, TAB_ID } from "./Debug.id.ts";
 
 export const DEBUG_CONFIG: DebugConfig = {
+  // A renommer par projet : prefixe des drapeaux `?debug` / `?stats` en session.
+  sessionPrefix: "boilerplate",
   tabs: [
     { id: TAB_ID.UNIVERSE, label: "Universe", visible: false, order: 1 },
     { id: TAB_ID.NODES, label: "Nodes", visible: true, order: 2 },

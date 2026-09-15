@@ -1,7 +1,11 @@
 import { Pane, type FolderApi, type TabPageApi } from "tweakpane";
+import { DebugValueStore, applyValue } from "./DebugValues.ts";
+import type { DebugPersistence } from "./DebugValues.ts";
 import type {
+  DebugBinding,
   DebugConfig,
   DebugSubscriptionOptions,
+  DebugTarget,
 } from "./types.ts";
 
 type InternalSubscription = DebugSubscriptionOptions & {
@@ -12,6 +16,20 @@ type InternalSubscription = DebugSubscriptionOptions & {
 function byOrder<T extends { order?: number }>(items: T[]): T[] {
   return [...items].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
 }
+
+/**
+ * Ce que rend `bind` quand il n'y a pas de panneau : un controle qui accepte
+ * tout et ne fait rien.
+ *
+ * Rendre `null` obligerait chaque appelant a se garder, et il suffirait d'un
+ * oubli pour casser la passe d'application — celle-la meme qui doit tourner en
+ * production.
+ */
+const INERT_BINDING = {
+  dispose: () => undefined,
+  on: () => INERT_BINDING,
+  refresh: () => undefined,
+} as unknown as DebugBinding;
 
 export class DebugManager {
   private _pane: Pane | null = null;
@@ -25,6 +43,15 @@ export class DebugManager {
   private _knownFolderIds = new Set<string>();
   private _isInitialized = false;
   private readonly _snapshotProviders = new Map<string, () => Record<string, unknown>>();
+  private readonly _values = new DebugValueStore();
+
+  /**
+   * A appeler AVANT `init` : les bindings relisent leur valeur au montage, et
+   * `init` monte immediatement les abonnements deja enregistres.
+   */
+  setPersistence(persistence: DebugPersistence): void {
+    this._values.configure(persistence);
+  }
 
   init(config: DebugConfig): void {
     if (this._isInitialized) return;
@@ -33,6 +60,55 @@ export class DebugManager {
     this._createPane();
     this._buildTree();
     this._mountAllVisibleSubscriptions();
+  }
+
+  /**
+   * Binding PERSISTANT : la valeur enregistree est reposee sur la cible avant
+   * la creation du controle, et toute modification y repart.
+   *
+   * `target` PEUT ETRE NUL, et c'est le point. Les valeurs sont la
+   * configuration de la scene, pas un etat du panneau : elles doivent
+   * s'appliquer que celui-ci existe ou non. Un appel sans cible pose la valeur
+   * et rend un controle inerte, ce qui permet de declarer les reglages UNE fois
+   * et de les consommer deux — une passe d'application au demarrage, une
+   * construction de panneau quand il est demande.
+   *
+   * Sans `path`, c'est un `addBinding` ordinaire : tout ne merite pas d'etre
+   * conserve, un compteur en lecture seule par exemple.
+   */
+  bind(
+    target: DebugTarget | null,
+    object: Record<string, unknown>,
+    key: string,
+    options: Record<string, unknown>,
+    path?: string
+  ): DebugBinding {
+    if (path !== undefined) {
+      const saved = this._values.read(path);
+      if (saved !== undefined) applyValue(object, key, saved);
+    }
+
+    if (target === null) return INERT_BINDING;
+
+    const binding = target.addBinding(object, key, options);
+
+    if (path !== undefined) {
+      binding.on("change", (event) => {
+        this._values.write(path, event.value);
+      });
+    }
+
+    return binding;
+  }
+
+  /** Valeur enregistree pour ce chemin, `undefined` si aucune. */
+  getSavedValue(path: string): unknown {
+    return this._values.read(path);
+  }
+
+  /** Ecriture hors binding, pour un reglage pilote par du code. */
+  setSavedValue(path: string, value: unknown): void {
+    this._values.write(path, value);
   }
 
   setConfig(config: DebugConfig): void {
@@ -132,6 +208,14 @@ export class DebugManager {
       const text = JSON.stringify(snapshot, null, 2);
       void navigator.clipboard.writeText(text);
       console.log("[Debug] All config copied:\n", text);
+    });
+
+    // Les curseurs s'enregistrent DEJA tout seuls, 400 ms apres le dernier
+    // geste. Ce bouton force l'ecriture sans attendre, et montre dans la console
+    // ce qui part reellement.
+    this._pane.addButton({ title: "Save Settings" }).on("click", () => {
+      this._values.flush();
+      console.log("[Debug] settings written:\n", JSON.stringify(this._values.snapshot(), null, 2));
     });
 
     const visibleTabs = byOrder(this._config.tabs).filter((tab) => tab.visible);

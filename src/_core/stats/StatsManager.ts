@@ -21,7 +21,12 @@ export class StatsManager {
   private _basicStats: StatsGl | null = null;
   private _threePerf: ThreePerfInstance | null = null;
   private _threePerfHost: HTMLDivElement | null = null;
-  private _basicEnabled = true;
+  /**
+   * ETEINT PAR DEFAUT, et c'est un defaut, pas un verrou. Actif d'office, il
+   * affichait images par seconde, CPU et GPU a tout visiteur de la production.
+   * Il s'allume par `?stats` dans l'URL, ou depuis Render -> Stats.
+   */
+  private _basicEnabled = false;
   private _perfEnabled = false;
   private _isInitializingBasic = false;
   private _isInitializingPerf = false;
