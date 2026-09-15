@@ -1,6 +1,5 @@
 import type { IThreeDeviceSlice } from "@/_core/systems/ThreeDevice.ts";
 import { NodeGraph } from "@_core/nodes/NodeGraph.ts";
-import { PipelineBase } from "@_core/pipeline/Pipeline.base.ts";
 import { UniverseBase } from "@_core/universes/Universe.base.ts";
 import { FOLDER_ID, TAB_ID } from "@graphics/debug/Debug.id.ts";
 import type { NodeId } from "@graphics/nodes/Node.id.ts";
@@ -9,8 +8,7 @@ import { MainCameraInputNode } from "@graphics/nodes/cameras/MainCamera.node.ts"
 import { Node1 } from "@graphics/nodes/tests/Node1.ts";
 import { Node1B } from "@graphics/nodes/tests/Node1B.ts";
 import { Node2 } from "@graphics/nodes/tests/Node2.ts";
-import { ForwardRenderPass } from "@graphics/passes/ForwardRenderPass.ts";
-import { OutputPass } from "@graphics/postprocessing/index.ts";
+import { CopyPass, EffectComposer, RenderPass } from "@graphics/postprocessing/index.ts";
 import { Scene } from "three";
 import type { UniverseId } from "../Universe.id.ts";
 import { UNIVERSE_ID } from "../Universe.id.ts";
@@ -30,8 +28,7 @@ export class MainUniverse extends UniverseBase<UniverseId> {
     const camera = cameraNode.camera;
 
     const graph = new NodeGraph(scene);
-    const output = new OutputPass();
-    const pipeline = new PipelineBase([new ForwardRenderPass(output.target), output]);
+    const pipeline = new EffectComposer([new RenderPass(), new CopyPass()]);
 
     super(
       UNIVERSE_ID.MAIN,
