@@ -178,6 +178,8 @@ export class AssetStore<TManifest extends AssetManifest> {
         return this._loadGltf(entry.src);
       case "json":
         return this._loadJson(entry.src);
+      case "binary":
+        return this._loadBinary(entry.src);
       case "audio":
         return this._loadAudio(entry.src);
       case "video":
@@ -201,6 +203,14 @@ export class AssetStore<TManifest extends AssetManifest> {
     if (entry.type === "gltf") {
       disposeGltf(resource as GLTF);
     }
+  }
+
+  private async _loadBinary(src: string): Promise<ArrayBuffer> {
+    const response = await fetch(src);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} ${response.statusText}`);
+    }
+    return response.arrayBuffer();
   }
 
   private _loadTexture(src: string): Promise<unknown> {

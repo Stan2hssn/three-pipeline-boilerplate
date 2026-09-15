@@ -1,6 +1,8 @@
 import type { VideoTexture } from "three";
 
-export type AssetType = "texture" | "gltf" | "json" | "audio" | "video";
+// `binary` rend un ArrayBuffer brut, pour les formats maison qu'aucun loader
+// three ne couvre (geometrie precalculee, champs de donnees).
+export type AssetType = "texture" | "gltf" | "json" | "audio" | "video" | "binary";
 
 export interface VideoAssetOptions {
   autoplay?: boolean;
