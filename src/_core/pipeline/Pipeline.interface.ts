@@ -7,6 +7,8 @@ export default interface IPipeline {
   beforeUnmount(): void | Promise<void>;
   onUnmounted(): void;
 
+  /** Voir `IPass.prepare`. Appele par `Output` avant tout rendu a l'ecran. */
+  prepare?(frame: FrameTiming, ctx: PassContext): void;
   render(frame: FrameTiming, ctx: PassContext): void;
   resize(width: number, height: number): void;
   dispose(): void;

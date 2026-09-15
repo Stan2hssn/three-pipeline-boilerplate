@@ -133,6 +133,20 @@ export default class Output {
   render(frame: FrameTiming): void {
     const activeMounted = Array.from(this._activeUniverses).filter((u) => u.mounted);
     if (activeMounted.length === 0) return;
+
+    // Hors ecran d'abord, et pour TOUS les univers montes : le post-traitement
+    // et la correction finale rendent la scene sans passer par le pipeline de
+    // l'univers. Une texture calculee dans `render` n'y serait donc jamais a
+    // jour — elle ne serait meme jamais calculee.
+    for (const u of activeMounted) {
+      u.getPipeline().prepare?.(frame, {
+        scene: u.scene,
+        camera: u.camera,
+        renderer: this._renderer,
+      });
+    }
+
+    // Apres `prepare` : une passe hors ecran deplace viewport et scissor.
     this._prepareRendererState();
     this._renderer.clear(true, true, true);
 

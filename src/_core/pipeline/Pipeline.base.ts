@@ -26,6 +26,10 @@ export class PipelineBase implements IPipeline {
         for (const p of this._passes) p.onUnmounted();
     }
 
+    prepare(frame: FrameTiming, ctx: PassContext): void {
+        for (const p of this._passes) p.prepare?.(frame, ctx);
+    }
+
     render(frame: FrameTiming, ctx: PassContext): void {
         for (const p of this._passes) p.render(frame, ctx);
     }
