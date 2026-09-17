@@ -20,7 +20,7 @@ fullscreenGeometry.setAttribute("uv", new Float32BufferAttribute([0, -1, 0, 1, 2
 const fullscreenCamera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
 /** Passe de `EffectComposer`. Voir `EffectComposer` pour l'ordre et les buffers. */
-export abstract class Pass implements IPass {
+export abstract class PassBase implements IPass {
   enabled = true;
   /** Pose par `EffectComposer` sur la derniere passe. */
   renderToScreen = false;

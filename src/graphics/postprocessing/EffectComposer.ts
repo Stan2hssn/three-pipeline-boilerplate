@@ -3,7 +3,7 @@ import { PipelineBase } from "@_core/pipeline/Pipeline.base.ts";
 import type { Renderer } from "@_core/systems/Renderer.type.ts";
 import type { FrameTiming } from "@_core/types/Frame.type.ts";
 import { HalfFloatType, Vector2, WebGLRenderTarget, type TextureDataType } from "three";
-import type { Pass } from "./passes/Pass.ts";
+import type { PassBase } from "./passes/Pass.base.ts";
 
 interface EffectComposerOptions {
   frameBufferType?: TextureDataType;
@@ -20,11 +20,11 @@ interface EffectComposerOptions {
 export class EffectComposer extends PipelineBase {
   readonly inputBuffer: WebGLRenderTarget;
   readonly outputBuffer: WebGLRenderTarget;
-  private readonly _chain: Pass[];
+  private readonly _chain: PassBase[];
   private readonly _size = new Vector2();
 
   // `WebGLRenderTarget` sert aussi a WebGPURenderer, qui accepte tout `RenderTarget`.
-  constructor(passes: Pass[], { frameBufferType = HalfFloatType, multisampling = 0 }: EffectComposerOptions = {}) {
+  constructor(passes: PassBase[], { frameBufferType = HalfFloatType, multisampling = 0 }: EffectComposerOptions = {}) {
     super(passes);
     this._chain = passes;
     this.inputBuffer = new WebGLRenderTarget(1, 1, { type: frameBufferType, samples: multisampling });
