@@ -210,9 +210,8 @@ export class DebugManager {
       console.log("[Debug] All config copied:\n", text);
     });
 
-    // Les curseurs s'enregistrent DEJA tout seuls, 400 ms apres le dernier
-    // geste. Ce bouton force l'ecriture sans attendre, et montre dans la console
-    // ce qui part reellement.
+    // Seul ce bouton ecrit le fichier ; le transport du projet peut garder la
+    // version precedente (la sonde la copie en `.bak`). La console montre ce qui part.
     this._pane.addButton({ title: "Save Settings" }).on("click", () => {
       this._values.flush();
       console.log("[Debug] settings written:\n", JSON.stringify(this._values.snapshot(), null, 2));
